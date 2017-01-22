@@ -1,0 +1,42 @@
+#install.packages("h2o")
+library(h2o)
+#localH2o = h2o.init(ip = "localhost", port = 54321, startH2O = TRUE)
+
+
+#Optical handwritten digits dataset----------------
+
+data<-read.table("optdigits.tra.txt",sep=',')
+testdata<-read.table("optdigits.tes.txt",sep=',')
+labels<-data[,65]
+testlabels<-testdata[,65]
+traindata_h2o<-as.h2o(data)
+trainlabels_h2o<-as.h2o(labels)
+testdata_h2o<-as.h2o(testdata)
+testlabels_h2o<-as.h2o(testlabels)
+
+#Training the deep learning model 
+dlModel<-h2o.deeplearning(x=1:64,y=65,training_frame = traindata_h2o,
+                          activation = "Tanh",
+                          hidden = c(50,50,50),  ## three hidden layers
+                          epochs = 500)
+trainPrediction<-h2o.predict(dlModel,traindata_h2o[,-10])
+testPrediction<-h2o.predict(dlModel,testdata_h2o[,-10])
+
+
+#Accuracy--------------------
+
+predictResult<-as.vector(testPrediction$predict)
+label<-as.vector(testlabels_h2o)
+count=0
+for(i in 1:1797){
+  if(round(predictResult[i])==label[i])count<-count+1
+}
+print("accuracy %")
+print((count*100)/1797)
+
+
+
+
+
+
+

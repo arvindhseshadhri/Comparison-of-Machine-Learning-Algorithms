@@ -1,0 +1,47 @@
+#install.packages("h2o")
+library(h2o)
+#localH2o = h2o.init(nthreads=-1,ip = "localhost", port = 54321, startH2O = TRUE)
+
+#Breast Cancer dataset----------------------------
+
+data<-read.table("breast-cancer-wisconsin.data.txt",sep=',')
+data<-data[,-1]
+data<-na.omit(data)
+labels<-data[,10]
+labels<-as.factor(labels)
+#Separating Data into test and training datasets
+
+set.seed(1234)
+smp_size <- floor(0.75 * nrow(data))
+train_ind <- sample(seq_len(nrow(data)), size = smp_size)
+traindata<-data[train_ind,]
+testdata<-data[-train_ind,]
+trainlabels<-labels[train_ind]
+testlabels<-labels[-train_ind]
+#Converting into h2o type data
+
+traindata_h2o<-as.h2o(traindata)
+trainlabels_h2o<-as.h2o(trainlabels)
+testdata_h2o<-as.h2o(testdata)
+testlabels_h2o<-as.h2o(testlabels)
+#Training the deep learning model----------------
+
+dlModel<-h2o.deeplearning(x=1:9,y=10,training_frame = traindata_h2o,
+                          activation = "Tanh",
+                          hidden = c(50,50,50),  ## three hidden layers
+                          epochs = 500)
+trainPrediction<-h2o.predict(dlModel,traindata_h2o)
+testPrediction<-h2o.predict(dlModel,testdata_h2o)
+predictResult<-as.vector(testPrediction$predict)
+label<-as.vector(testlabels_h2o)
+count=0
+
+#Accuracy--------------------------------------
+for(i in 1:175){
+  if(round(predictResult[i])==label[i])count<-count+1
+}
+print("accuracy %")
+print((count*100)/175)
+
+
+
